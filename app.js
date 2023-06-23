@@ -10,28 +10,33 @@ function getHowLongInSecondsFrom(startTime) {
 fs.readFile("cards.xml", returnSets);
 
 function returnSets(err, data) {
+  console.log(`Starting`);
   if (err) {
     return console.error(err);
   }
   const startTime = Date.now();
-
-  console.log(`Starting`);
-  let i = 0;
+  const dataDictionary = {};
   let nodeIndex = 0;
+
   for (let node in data) {
-    if (i > 100) {
-      return;
-    }
+    const numberOfKeys = Object.keys(node).length;
     nodeIndex++;
-    if (typeof node != "string") {
-      i++;
-      console.log(`TYPE ${typeof node} AT  ${nodeIndex}`);
+
+    try {
+      // get how many nodes have how many keys
+      if (!dataDictionary[numberOfKeys]) {
+        dataDictionary[numberOfKeys] = 1;
+      }
+      dataDictionary[numberOfKeys]++;
+    } catch (err) {
+      console.error(err);
     }
   }
 
   const finishTime = getHowLongInSecondsFrom(startTime);
 
   console.log(
-    `Finished in ${finishTime} seconds, ${i} nodes found, ${nodeIndex} nodes traversed`
+    `Finished in ${finishTime} seconds, ${nodeIndex} nodes traversed`
   );
+  console.log(dataDictionary);
 }
