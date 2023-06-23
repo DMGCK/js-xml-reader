@@ -1,0 +1,20 @@
+{
+  "name": "js-xml-reader",
+  "version": "1.0.0",
+  "description": "This is a subproject to learn how to interact with external data files with JS. I plan to use it to read xml files of MTG cards for a multiplayer MTG project.",
+  "main": "app.js",
+  "type": "module",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/DMGCK/js-xml-reader.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/DMGCK/js-xml-reader/issues"
+  },
+  "homepage": "https://github.com/DMGCK/js-xml-reader#readme"
+}

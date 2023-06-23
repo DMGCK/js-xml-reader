@@ -1,0 +1,10 @@
+{
+    "configurations": [
+    {
+        "command": "node app.js",
+        "name": "Run File",
+        "request": "launch",
+        "type": "node-terminal"
+    }
+    ]
+}
