@@ -1,5 +1,4 @@
 import fs from "fs";
-import { type } from "os";
 
 function getHowLongInSecondsFrom(startTime) {
   const now = Date.now();
@@ -7,36 +6,78 @@ function getHowLongInSecondsFrom(startTime) {
   return timeInSeconds;
 }
 
-fs.readFile("cards.xml", returnSets);
+fs.readFile("cards.xml", transformIntoObject);
 
-function returnSets(err, data) {
+function transformIntoObject(err, data) {
   console.log(`Starting`);
-  if (err) {
-    return console.error(err);
-  }
   const startTime = Date.now();
-  const dataDictionary = {};
-  let nodeIndex = 0;
+  const convertedData = {};
+  const xmlString = [...data.toString()];
+  let currentString = "";
+  let openTagsArray = [];
+  let openingTag = false;
+  let closingTag = false;
+  const internalContent = "";
+  try {
+    xmlString.forEach((character, i) => {
+      if (i > 1000) {
+        return openTagsArray;
+      }
+      currentString = `${currentString}${character}`;
+      console.log(currentString);
+      // if its longer than like idk 30 character mark it as closing as you find the > bracer
+      if (currentString.length > 30 && openingTag) {
+        closingTag = true;
+      }
+      if (character == `<` && xmlString[i + 1] != `/` && !closingTag) {
+        openingTag = true;
+      }
+      if (character == `>` && openingTag) {
+        openTagsArray.push({ [currentString]: [] });
+        // console.log(`OPEN TAG ${currentString} ${i}`);
+        openingTag = false;
+        currentString = "";
+      }
+      if (character == `<` && xmlString[i + 1] == `/` && !openingTag) {
+        // console.log(`CLOSER FOUND - CONTENT ${currentString}`);
+        closingTag = true;
+        // prettier-ignore
+        // put the data collected in between in the value of the closed tag
+        // remove the latest open tag from array
+        // openTagsArray[?openTagsArray.length -2][thisKey].push() = internalContent;
+      }
+      if (character == `>` && closingTag) {
+        // console.log(`CLOSING TAG ${currentString}`);
+        currentString = "";
+        closingTag = false;
+      } else {
+        // console.log(`ACTUAL CONTENT ${currentString}`);
+        currentString = "";
+      }
+    });
+  } catch (err) {
+    console.error(err);
+  }
 
+  const finishTime = getHowLongInSecondsFrom(startTime);
+  console.log(`Finished in ${finishTime} seconds`);
+  console.log(openTagsArray[2]);
+}
+
+function getNodeTypesAndAmount(data) {
+  let nodeIndex = 0;
+  const nodeDictionary = {};
   for (let node in data) {
     const numberOfKeys = Object.keys(node).length;
     nodeIndex++;
-
     try {
-      // get how many nodes have how many keys
-      if (!dataDictionary[numberOfKeys]) {
-        dataDictionary[numberOfKeys] = 1;
+      if (!nodeDictionary[numberOfKeys]) {
+        nodeDictionary[`${numberOfKeys}Keys`] = 1;
       }
-      dataDictionary[numberOfKeys]++;
+      nodeDictionary[`${numberOfKeys}Keys`]++;
     } catch (err) {
       console.error(err);
     }
   }
-
-  const finishTime = getHowLongInSecondsFrom(startTime);
-
-  console.log(
-    `Finished in ${finishTime} seconds, ${nodeIndex} nodes traversed`
-  );
-  console.log(dataDictionary);
+  return nodeDictionary;
 }
