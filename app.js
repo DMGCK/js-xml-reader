@@ -1,4 +1,3 @@
-import { match } from "assert";
 import fs from "fs";
 
 function getHowLongInSecondsFrom(startTime) {
@@ -7,7 +6,6 @@ function getHowLongInSecondsFrom(startTime) {
   return timeInSeconds;
 }
 
-// returns false, otherwise returns index of matching primitive
 function findLatestPairIndex(tagArray, matchingObj) {
   const openingIndex = tagArray.findIndex((tag) => {
     if (`<${matchingObj}` == tag.toString()) {
@@ -69,34 +67,27 @@ async function transformIntoObject(err, data) {
         openingTag = false;
         currentString = "";
       }
-      //
-      //
+
       if (character == `<` && xmlString[ind + 1] == `/` && !openingTag) {
-        // currentString = "";
         closingTag = true;
       }
-      //
-      //
+
       if (character == `>` && closingTag) {
         const splitStringArray = currentString.split("</");
         // prettier-ignore
         const isParentNodeIndex = findLatestPairIndex(openTagsArray,splitStringArray[1]);
-
         if (!isParentNodeIndex) {
           openTagsArray[openTagsArray.length - 1] = {
             [`<${splitStringArray[1]}`]: splitStringArray[0],
           };
         }
-
         if (typeof isParentNodeIndex == "number" && isParentNodeIndex > 0) {
           const internalData = openTagsArray.splice(
             isParentNodeIndex,
             openTagsArray.length - isParentNodeIndex - 1
           );
           openTagsArray[openTagsArray.length - 1] = internalData;
-          // slice all the opjects from new index to old, then set them equal to =[...arrayOfObjects]
         }
-
         currentString = "";
         closingTag = false;
       }
@@ -104,13 +95,6 @@ async function transformIntoObject(err, data) {
   } catch (err) {
     console.error(err);
   }
-
-  // for (const [index, elem] of openTagsArray.entries()) {
-  //   console.log(index, elem);
-  //   for (const [index, element] of elem.entries()) {
-  //     console.log(index, element);
-  //   }
-  // }
   console.log(openTagsArray);
   const finishTime = getHowLongInSecondsFrom(startTime);
   console.log(`Finished in ${finishTime} seconds`);
