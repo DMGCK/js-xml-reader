@@ -1,3 +1,4 @@
+import { match } from "assert";
 import fs from "fs";
 
 function getHowLongInSecondsFrom(startTime) {
@@ -6,71 +7,113 @@ function getHowLongInSecondsFrom(startTime) {
   return timeInSeconds;
 }
 
+// returns false, otherwise returns index of matching primitive
+function findLatestPairIndex(tagArray, matchingObj) {
+  const openingIndex = tagArray.findIndex((tag) => {
+    if (`<${matchingObj}` == tag.toString()) {
+      return true;
+    }
+  });
+
+  if (openingIndex != tagArray.length - 1) {
+    return openingIndex;
+  }
+}
+
 fs.readFile("cards.xml", transformIntoObject);
 
-function transformIntoObject(err, data) {
-  console.log(`Starting`);
+async function transformIntoObject(err, data) {
+  console.log("STARTING");
   const startTime = Date.now();
   const xmlString = [...data.toString()];
+  const maxCycles = xmlString.length;
+  let currentlyLoaded = 0;
   let currentString = "";
   let openTagsArray = [];
   let openingTag = false;
   let closingTag = false;
   try {
-    xmlString.forEach((character, i) => {
-      // EXIT @ 1000 cycles
-      if (i > 500) {
-        return openTagsArray;
+    xmlString.forEach((character, ind) => {
+      const percentLoaded = ind / maxCycles;
+
+      if (percentLoaded.toFixed(1) > currentlyLoaded) {
+        console.log(
+          `LOADING: %${
+            percentLoaded.toFixed(1) / 10
+          } in ${getHowLongInSecondsFrom(startTime)} seconds`
+        );
+        currentlyLoaded = percentLoaded.toFixed(1);
       }
-      currentString = `${currentString}${character}`;
-      // if its longer than like idk 30 character mark it as closing as you find the > bracer
+
+      if (ind > maxCycles) {
+        return;
+      }
+      currentString = `${currentString}${character}`
+        .replace(/\s/g, "")
+        .replace(/[\r\n]/gm, "");
       if (currentString.length > 30 && openingTag && !closingTag) {
         closingTag = true;
-        console.log("This one is too long");
       }
-      if (character == `<` && xmlString[i + 1] != `/` && !closingTag) {
+
+      if (character == `<` && xmlString[ind + 1] != `/` && !closingTag) {
         openingTag = true;
-        // console.log(`Starting to open tag ${currentString}`);
       }
+
       if (character == `>` && openingTag) {
-        openTagsArray.push({ [currentString]: [] });
-        console.log(
-          `OPEN TAG ${currentString}`
-          // PREV TAG ${Object.keys(openTagsArray[openTagsArray.length - 2] || "null")}
-        );
+        if (
+          currentString[currentString.length - 2] != "?" &&
+          currentString[currentString.length - 2] != `"`
+        ) {
+          openTagsArray.push(currentString);
+        }
         openingTag = false;
         currentString = "";
       }
-      if (character == `<` && xmlString[i + 1] == `/` && !openingTag) {
-        // console.log(`CLOSER FOUND - CONTENT ${currentString}`);
+      //
+      //
+      if (character == `<` && xmlString[ind + 1] == `/` && !openingTag) {
+        // currentString = "";
         closingTag = true;
       }
+      //
+      //
       if (character == `>` && closingTag) {
-        const mostRecentlyClosedTag = openTagsArray[openTagsArray.length - 1];
         const splitStringArray = currentString.split("</");
+        // prettier-ignore
+        const isParentNodeIndex = findLatestPairIndex(openTagsArray,splitStringArray[1]);
 
-        mostRecentlyClosedTag[`<${splitStringArray[1]}`] = splitStringArray[0];
-        console.log(
-          `Closed tag ${Object.keys(mostRecentlyClosedTag)} with data ${
-            mostRecentlyClosedTag[`<${splitStringArray[1]}`]
-          }`
-        );
+        if (!isParentNodeIndex) {
+          openTagsArray[openTagsArray.length - 1] = {
+            [`<${splitStringArray[1]}`]: splitStringArray[0],
+          };
+        }
+
+        if (typeof isParentNodeIndex == "number" && isParentNodeIndex > 0) {
+          const internalData = openTagsArray.splice(
+            isParentNodeIndex,
+            openTagsArray.length - isParentNodeIndex - 1
+          );
+          openTagsArray[openTagsArray.length - 1] = internalData;
+          // slice all the opjects from new index to old, then set them equal to =[...arrayOfObjects]
+        }
 
         currentString = "";
         closingTag = false;
       }
-      // else {
-      //   // console.log(`ACTUAL CONTENT ${currentString}`);
-      //   currentString = "";
-      // }
     });
   } catch (err) {
     console.error(err);
   }
 
+  // for (const [index, elem] of openTagsArray.entries()) {
+  //   console.log(index, elem);
+  //   for (const [index, element] of elem.entries()) {
+  //     console.log(index, element);
+  //   }
+  // }
+  console.log(openTagsArray);
   const finishTime = getHowLongInSecondsFrom(startTime);
   console.log(`Finished in ${finishTime} seconds`);
-  console.log(openTagsArray[2]);
 }
 
 function getNodeTypesAndAmount(data) {
