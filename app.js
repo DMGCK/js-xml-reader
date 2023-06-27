@@ -11,49 +11,58 @@ fs.readFile("cards.xml", transformIntoObject);
 function transformIntoObject(err, data) {
   console.log(`Starting`);
   const startTime = Date.now();
-  const convertedData = {};
   const xmlString = [...data.toString()];
   let currentString = "";
   let openTagsArray = [];
   let openingTag = false;
   let closingTag = false;
-  const internalContent = "";
   try {
     xmlString.forEach((character, i) => {
-      if (i > 1000) {
+      // EXIT @ 1000 cycles
+      if (i > 500) {
         return openTagsArray;
       }
       currentString = `${currentString}${character}`;
-      console.log(currentString);
       // if its longer than like idk 30 character mark it as closing as you find the > bracer
-      if (currentString.length > 30 && openingTag) {
+      if (currentString.length > 30 && openingTag && !closingTag) {
         closingTag = true;
+        console.log("This one is too long");
       }
       if (character == `<` && xmlString[i + 1] != `/` && !closingTag) {
         openingTag = true;
+        // console.log(`Starting to open tag ${currentString}`);
       }
       if (character == `>` && openingTag) {
         openTagsArray.push({ [currentString]: [] });
-        // console.log(`OPEN TAG ${currentString} ${i}`);
+        console.log(
+          `OPEN TAG ${currentString}`
+          // PREV TAG ${Object.keys(openTagsArray[openTagsArray.length - 2] || "null")}
+        );
         openingTag = false;
         currentString = "";
       }
       if (character == `<` && xmlString[i + 1] == `/` && !openingTag) {
         // console.log(`CLOSER FOUND - CONTENT ${currentString}`);
         closingTag = true;
-        // prettier-ignore
-        // put the data collected in between in the value of the closed tag
-        // remove the latest open tag from array
-        // openTagsArray[?openTagsArray.length -2][thisKey].push() = internalContent;
       }
       if (character == `>` && closingTag) {
-        // console.log(`CLOSING TAG ${currentString}`);
+        const mostRecentlyClosedTag = openTagsArray[openTagsArray.length - 1];
+        const splitStringArray = currentString.split("</");
+
+        mostRecentlyClosedTag[`<${splitStringArray[1]}`] = splitStringArray[0];
+        console.log(
+          `Closed tag ${Object.keys(mostRecentlyClosedTag)} with data ${
+            mostRecentlyClosedTag[`<${splitStringArray[1]}`]
+          }`
+        );
+
         currentString = "";
         closingTag = false;
-      } else {
-        // console.log(`ACTUAL CONTENT ${currentString}`);
-        currentString = "";
       }
+      // else {
+      //   // console.log(`ACTUAL CONTENT ${currentString}`);
+      //   currentString = "";
+      // }
     });
   } catch (err) {
     console.error(err);
